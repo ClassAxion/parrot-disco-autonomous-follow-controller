@@ -3,10 +3,11 @@ import { io, Socket } from 'socket.io-client';
 import logger from './utils/logger';
 import Algorithm from './module/Algorithm.module';
 
+if (!process.argv[2] || !process.argv[3]) process.exit(1);
+
 const targets: { [key: string]: string } = {
-    DISCO_1: 'localhost:9999',
-    // DISCO_1: 'localhost:9991',
-    // DISCO_2: 'localhost:9992',
+    DISCO_1: process.argv[2],
+    DISCO_2: process.argv[3],
 };
 
 const sockets: { [key: string]: Socket } = {};
@@ -72,6 +73,8 @@ function attachEvents(id: string, socket: Socket) {
 
     logger.info(`Events attached`);
 
+    await new Promise((r) => setTimeout(r, 15 * 1000));
+
     logger.info(`Starting following algorithm..`);
 
     const algorithm = new Algorithm();
@@ -84,20 +87,20 @@ function attachEvents(id: string, socket: Socket) {
         algorithm.setTelemetry('B', telemetry['DISCO_2']);
 
         const roll = algorithm.getRollAxis();
-        console.log(`Roll: ${roll}`);
 
         const throttle = algorithm.getThrottle();
-        console.log(`Throttle: ${throttle}`);
 
         const distance = algorithm.getDistance();
-        console.log(`Last distance: ${distance}m`);
 
-        if (!lastRoll || lastRoll !== roll) {
+        console.log(`Roll: ${roll}, Throttle: ${throttle}, Last distance ${distance}m`);
+
+        if (!lastRoll || lastRoll !== roll || roll === 25 || roll === -25) {
             sockets['DISCO_1'].emit('move', { roll });
         }
 
         if (!lastThrottle || lastThrottle !== throttle) {
-            sockets['DISCO_1'].emit('move', { throttle });
+            // dont use throttle for now
+            // sockets['DISCO_1'].emit('move', { throttle });
         }
 
         lastRoll = roll;

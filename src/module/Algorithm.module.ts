@@ -1,4 +1,31 @@
 import Telemetry from 'interface/Telemetry.interface';
+
+global.window = {
+    screen: {
+        //@ts-ignore
+        devicePixelRatio: 1,
+    },
+};
+global.document = {
+    documentElement: {
+        //@ts-ignore
+        style: {},
+    },
+    //@ts-ignore
+    getElementsByTagName: function () {
+        return [];
+    },
+    //@ts-ignore
+    createElement: function () {
+        return {};
+    },
+};
+//@ts-ignore
+global.navigator = {
+    userAgent: 'nodejs',
+    platform: 'nodejs',
+};
+
 import { latLng } from 'leaflet';
 
 const RAD2DEG = 180 / Math.PI;
@@ -25,25 +52,26 @@ export default class Algorithm {
 
     private distance: number;
 
-    private config: Config = new Config();
+    private config: Config;
 
     private firstThrottleWithLoad: number;
 
     constructor(config?: Config) {
         if (!config) {
-            this.config.required_distance = 50;
-            this.config.required_distance_margin = 10;
-            this.config.direction_margin = 5;
-
-            this.config.roll = {
-                min: 10,
-                max: 80,
-            };
-
-            this.config.throttle = {
-                max_slowing: -50,
-                max_full_power: 10,
-                rest: 5,
+            //@ts-ignore
+            this.config = {
+                required_distance: 50,
+                required_distance_margin: 10,
+                direction_margin: 20,
+                roll: {
+                    min: 5,
+                    max: 25,
+                },
+                throttle: {
+                    max_slowing: -50,
+                    max_full_power: 10,
+                    rest: 5,
+                },
             };
         } else {
             this.config = config;
@@ -99,7 +127,7 @@ export default class Algorithm {
     private rollMapWithConfig(value) {
         if (value > 0) {
             if (value < this.config.roll.min) return this.config.roll.min;
-            if (value > this.config.roll.max) this.config.roll.max;
+            if (value > this.config.roll.max) return this.config.roll.max;
         } else if (value < 0) {
             if (value > -this.config.roll.min) return -this.config.roll.min;
             if (value < -this.config.roll.max) return -this.config.roll.max;
