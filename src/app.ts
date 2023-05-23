@@ -2,12 +2,21 @@ import Telemetry from './interface/Telemetry.interface';
 import { io, Socket } from 'socket.io-client';
 import logger from './utils/logger';
 import Algorithm from './module/Algorithm.module';
+import dotenv from 'dotenv';
 
-if (!process.argv[2] || !process.argv[3]) process.exit(1);
+dotenv.config();
+
+const useRoll = true;
+const useThrottle = false;
+
+const discoFollower = process.env.FOLLOWER || process.argv[2];
+const discoTarget = process.env.TARGET || process.argv[3];
+
+if (!discoFollower || !discoTarget) process.exit(1);
 
 const targets: { [key: string]: string } = {
-    DISCO_1: process.argv[2],
-    DISCO_2: process.argv[3],
+    DISCO_1: discoFollower,
+    DISCO_2: discoTarget,
 };
 
 const sockets: { [key: string]: Socket } = {};
@@ -46,9 +55,10 @@ function attachEvents(id: string, socket: Socket) {
 
 (async () => {
     for (const id in targets) {
-        logger.info(`Connecting to ${targets[id]} (${id})`);
-
         const url = targets[id];
+
+        // logger.info(`Connecting to ${url} (${id})`);
+        logger.info(`Connecting to ${id}`);
 
         const socket = io(url);
 
@@ -71,7 +81,7 @@ function attachEvents(id: string, socket: Socket) {
         attachEvents(id, sockets[id]);
     }
 
-    logger.info(`Events attached`);
+    logger.info(`Events attached, starting in 15s..`);
 
     await new Promise((r) => setTimeout(r, 15 * 1000));
 
@@ -79,15 +89,14 @@ function attachEvents(id: string, socket: Socket) {
 
     const algorithm = new Algorithm();
 
-    let lastRoll: number;
-    let lastThrottle: number;
+    let lastRoll: number = 0,
+        lastThrottle: number = 0;
 
     while (true) {
         algorithm.setTelemetry('A', telemetry['DISCO_1']);
         algorithm.setTelemetry('B', telemetry['DISCO_2']);
 
         const roll = algorithm.getRollAxis();
-
         const throttle = algorithm.getThrottle();
 
         const distance = algorithm.getDistance();
@@ -95,12 +104,19 @@ function attachEvents(id: string, socket: Socket) {
         console.log(`Roll: ${roll}, Throttle: ${throttle}, Last distance ${distance}m`);
 
         if (!lastRoll || lastRoll !== roll || roll === 25 || roll === -25) {
-            sockets['DISCO_1'].emit('move', { roll });
+            if (useRoll) {
+                sockets['DISCO_1'].emit('move', { roll });
+
+                // console.log(`Moving roll: ${roll}`);
+            }
         }
 
         if (!lastThrottle || lastThrottle !== throttle) {
-            // dont use throttle for now
-            // sockets['DISCO_1'].emit('move', { throttle });
+            if (useThrottle) {
+                sockets['DISCO_1'].emit('move', { throttle });
+
+                // console.log(`Moving throttle: ${throttle}`);
+            }
         }
 
         lastRoll = roll;

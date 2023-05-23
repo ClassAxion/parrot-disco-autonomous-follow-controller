@@ -61,11 +61,11 @@ export default class Algorithm {
             //@ts-ignore
             this.config = {
                 required_distance: 50,
-                required_distance_margin: 10,
-                direction_margin: 20,
+                required_distance_margin: 25,
+                direction_margin: 10,
                 roll: {
                     min: 5,
-                    max: 25,
+                    max: 50,
                 },
                 throttle: {
                     max_slowing: -50,

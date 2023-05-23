@@ -27,6 +27,7 @@
     },
     "homepage": "https://github.com/ClassAxion/parrot-disco-autonomous-follow-controller#readme",
     "dependencies": {
+        "dotenv": "^16.0.3",
         "express": "^4.17.1",
         "leaflet": "^1.9.3",
         "nodemon": "^2.0.12",
